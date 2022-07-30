@@ -1,0 +1,143 @@
+<!doctype html>
+<html>
+
+<head>
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+	<meta charset="utf-8">
+	<title>تحويل الكلام إلى نص</title>
+	<style>
+		.container {
+			text-align: center;
+			margin-top: 100px;
+			direction: rtl;
+		}
+
+		textarea {
+			width: 500px;
+			height: 250px;
+			resize: none;
+			font-size: 16px;
+			padding: 10px 15px;
+		}
+
+		button {
+			margin-top: 10px;
+		}
+
+		#confd {
+			margin-top: 10px;
+		}
+
+		#countryLang {
+			display: none;
+		}
+	</style>
+</head>
+
+<body>
+	<div class="container">
+		<textarea id="output"></textarea><br>
+		<button id="start">تشغيل</button>
+		<button id="stop">إيقاف</button>
+		<button id="connect" onclick="onConnectUsb()">توصيل</button>
+		<button id="cancel">رجوع</button>
+		<select id="country"></select>
+		<select id="countryLang"></select>
+		<input type="radio" name="langSpeech" st id="arabic" checked="checked" value="عربي" />عربي
+		<input type="radio" name="langSpeech" id="english" value="English" />English
+		<div id="confd">----</div>
+	</div>
+	<script>
+		var outText = ''
+		var output = document.getElementById("output");
+		var start = document.getElementById("start");
+		var connect = document.getElementById("connect");
+		var stop = document.getElementById("stop");
+		var cancel = document.getElementById("cancel");
+		var country = document.getElementById("country");
+		var countryLang = document.getElementById("countryLang");
+		var confd = document.getElementById("confd");
+
+		// now lets use web speech api
+		var speechRecognition = speechRecognition || webkitSpeechRecognition;
+
+		var recognizer = new speechRecognition();
+
+		// new get languages from array supported by api
+		// first copy array from a website
+
+		var langList = [['عربي', ['ar-SA']],
+		['English', ['en-US']]];
+
+		// first select a default language on page load
+		if (document.getElementById('arabic').checked) {
+			recognizer.lang = "ar-SA";
+		} else if (document.getElementById('english').checked) {
+			recognizer.lang = "en-US";
+		}
+
+		// now create a list of language to select on page
+		for (var i = 0; i < langList.length; i++) {
+
+			// add it in the select tag
+			var countryList = countryList + '<option value="' + i + '">' + langList[i][0] + '</option>';
+		}
+		country.innerHTML = countryList;
+
+		// some languages are used in more that one country Now specify languages for country
+		country.onchange = function () {
+			var countryVal = country.value;
+
+			// we have to give the array variable to get data "langList"
+			var selectCount = langList[countryVal];
+			if (selectCount.length <= 2) {
+				var countryLangList = countryLangList + '<option value="' + selectCount[1][0] + '">' + selectCount[0] + '</option>';
+			}
+
+			else {
+				for (var j = 1; j < selectCount.length; j++) {
+					var countryLangList = countryLangList + '<option value="' + selectCount[j][0] + '">' + selectCount[j][1] + '</option>';
+				}
+			}
+
+			countryLang.innerHTML = countryLangList;
+			countryLang.style.display = "inline-block";
+			recognizer.lang = countryLang.value;
+		}
+
+		// first set the value for lang 
+		countryLang.onchange = function () {
+			// it will get the value and assign to the "recognizer.lang" on selecting
+			recognizer.lang = countryLang.value;
+		}
+
+		// now set controls
+		start.onclick = function () {
+			recognizer.start();
+		}
+		stop.onclick = function () {
+			recognizer.stop();
+		}
+		cancel.onclick = function () {
+			recognizer.abort();
+			confd.innerHTML = "تم الإلغاء";
+		}
+
+		// when the recognizing start
+		recognizer.onstart = function () {
+			confd.innerHTML = "جاري التسجيل ...";
+		}
+		recognizer.onspeechend = function () {
+			stop.click();
+		}
+		recognizer.onresult = function (event) {
+			outText = event.results[0][0].transcript;
+			output.value = outText;
+			onChangespeech()
+			confd.innerHTML = "تم التعرف بنجاح";
+		}
+	</script>
+	<script src="arduino.js"></script>
+</body>
+
+</html>
